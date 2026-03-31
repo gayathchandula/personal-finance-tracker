@@ -33,10 +33,10 @@ export function CategoryPieChart({
     .filter((entry) => entry.value > 0);
 
   return (
-    <div className="h-64 w-full">
+    <div className="h-52 w-full sm:h-56 lg:h-64">
       <ResponsiveContainer>
         <PieChart>
-          <Pie data={byCategory} dataKey="value" nameKey="name" outerRadius={90} label>
+          <Pie data={byCategory} dataKey="value" nameKey="name" outerRadius={80} label>
             {byCategory.map((_, i) => (
               <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
             ))}
@@ -61,7 +61,7 @@ export function MonthlyTrendChart({ transactions }: { transactions: Transaction[
     .map(([month, expense]) => ({ month, expense }));
 
   return (
-    <div className="h-64 w-full">
+    <div className="h-52 w-full sm:h-56 lg:h-64">
       <ResponsiveContainer>
         <LineChart data={points}>
           <XAxis dataKey="month" />

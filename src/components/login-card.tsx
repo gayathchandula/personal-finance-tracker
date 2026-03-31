@@ -15,7 +15,7 @@ export function LoginCard() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-16">
+    <div className="flex min-h-[100dvh] min-h-screen flex-col items-center justify-center bg-background px-4 py-12 pb-[max(3rem,env(safe-area-inset-bottom))] pt-8 sm:py-16">
       <div className="mb-10 flex items-center gap-3 text-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-container text-on-primary">
           <span className="material-symbols-outlined filled text-[28px]">account_balance_wallet</span>
@@ -28,7 +28,7 @@ export function LoginCard() {
         </div>
       </div>
 
-      <div className="w-full max-w-md rounded-2xl bg-surface-container-lowest p-8 shadow-sm ring-1 ring-outline-variant/10">
+      <div className="w-full max-w-md rounded-2xl bg-surface-container-lowest p-6 shadow-sm ring-1 ring-outline-variant/10 sm:p-8">
         <h1 className="font-headline text-2xl font-extrabold text-on-surface">Welcome back</h1>
         <p className="mt-2 text-sm text-on-surface-variant">
           Demo login for review only. Credentials are prefilled.

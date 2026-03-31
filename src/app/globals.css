@@ -43,6 +43,11 @@
   --color-surface-tint: #396093;
   --color-inverse-surface: #2f3033;
   --color-inverse-on-surface: #f2f0f3;
+  /* App chrome — bright white top & bottom (vs #faf9fc page) */
+  --color-nav-bar: #ffffff;
+  --color-nav-dock: #ffffff;
+  --color-nav-bar-dark: #222627;
+  --color-nav-dock-dark: #191c1d;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-headline: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 }

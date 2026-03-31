@@ -24,6 +24,14 @@ function txIcon(kind: TransactionKind) {
   return kind === "income" ? "payments" : "shopping_bag";
 }
 
+type MobileNavId = "home" | "history" | "add" | "insights" | "profile";
+
+const MOBILE_CATEGORY_STYLES = [
+  { box: "bg-orange-100", icon: "text-orange-600", bar: "bg-orange-500" },
+  { box: "bg-blue-100", icon: "text-blue-600", bar: "bg-blue-500" },
+  { box: "bg-purple-100", icon: "text-purple-600", bar: "bg-purple-500" },
+] as const;
+
 export function Dashboard() {
   const user = useFinanceStore((s) => s.user);
   const logout = useFinanceStore((s) => s.logout);
@@ -48,6 +56,8 @@ export function Dashboard() {
     date: todayIsoDate(),
     note: "",
   });
+  const [mobileNav, setMobileNav] = useState<MobileNavId>("home");
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   const currentMonthKey = getMonthKey(todayIsoDate());
   const monthTransactions = transactions.filter((t) => getMonthKey(t.date) === currentMonthKey);
@@ -61,7 +71,7 @@ export function Dashboard() {
   const budgetUsedPct = goals.monthlyBudget > 0 ? (totalExpenses / goals.monthlyBudget) * 100 : 0;
   const discretionaryLeft = Math.max(0, goals.monthlyBudget - totalExpenses);
 
-  const topExpenseCategories = useMemo(() => {
+  const rankedExpenseCategories = useMemo(() => {
     const map = new Map<string, number>();
     for (const t of monthTransactions) {
       if (t.kind !== "expense") continue;
@@ -73,9 +83,15 @@ export function Dashboard() {
         amount,
         name: categories.find((c) => c.id === categoryId)?.name ?? "—",
       }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 2);
+      .sort((a, b) => b.amount - a.amount);
   }, [monthTransactions, categories]);
+
+  const topExpenseCategories = rankedExpenseCategories.slice(0, 2);
+  const topExpenseCategoriesMobile = rankedExpenseCategories.slice(0, 3);
+  const mobileCategoryBarMax = Math.max(
+    1,
+    ...topExpenseCategoriesMobile.map((c) => c.amount),
+  );
 
   const rows = useMemo(
     () =>
@@ -144,14 +160,25 @@ export function Dashboard() {
       date: found.date,
       note: found.note ?? "",
     });
-    document.getElementById("add-transaction")?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById("transaction-form")?.scrollIntoView({ behavior: "smooth" });
+    setMobileNav("add");
   }
 
   const initial = (user?.username ?? "?").slice(0, 1).toUpperCase();
 
+  function navigateMobile(targetId: string, tab: MobileNavId) {
+    setMobileNav(tab);
+    setAccountMenuOpen(false);
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(targetId)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
   return (
-    <div className="flex min-h-screen bg-background text-on-surface">
-      <aside className="font-headline fixed left-0 top-0 z-50 flex h-screen w-64 flex-col gap-y-6 border-r-0 bg-slate-50/90 px-6 py-8 tracking-tight backdrop-blur-xl dark:bg-slate-950/90">
+    <div className="flex min-h-screen min-h-[100dvh] bg-background text-on-surface">
+      <aside className="font-headline fixed left-0 top-0 z-50 hidden h-screen w-64 gap-y-6 border-r border-outline-variant/10 bg-nav-bar px-6 py-8 tracking-tight lg:flex lg:flex-col dark:border-white/5 dark:bg-nav-bar-dark">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-container text-on-primary">
             <span className="material-symbols-outlined filled text-[22px]">account_balance_wallet</span>
@@ -241,8 +268,59 @@ export function Dashboard() {
         </div>
       </aside>
 
-      <main className="ml-64 flex min-h-screen flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex w-full items-center justify-between border-b border-transparent bg-slate-50/80 px-8 py-3 text-sm font-medium backdrop-blur-xl dark:bg-slate-950/80 font-headline">
+      <main className="flex min-h-screen min-h-[100dvh] flex-1 flex-col pb-28 lg:ml-64 lg:pb-0">
+        <header className="sticky top-0 z-40 flex w-full items-center justify-between border-b border-outline-variant/10 bg-nav-bar px-4 py-4 shadow-none dark:border-white/5 dark:bg-nav-bar-dark lg:hidden">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-container-highest text-sm font-bold text-primary-container">
+              {initial}
+            </div>
+            <h1 className="font-headline text-xl font-extrabold text-primary">Prosper Ledger</h1>
+          </div>
+          <div className="relative flex items-center gap-1">
+            <button
+              type="button"
+              className="rounded-full p-2 text-primary transition-opacity hover:opacity-80"
+              aria-label="Notifications"
+            >
+              <span className="material-symbols-outlined text-[26px]">notifications</span>
+            </button>
+            <button
+              type="button"
+              className="rounded-full p-2 text-primary"
+              aria-expanded={accountMenuOpen}
+              aria-label="Account menu"
+              onClick={() => setAccountMenuOpen((o) => !o)}
+            >
+              <span className="material-symbols-outlined text-[26px]">more_vert</span>
+            </button>
+            {accountMenuOpen ? (
+              <div className="absolute right-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-xl border border-outline-variant/15 bg-surface-container-lowest py-1 text-sm shadow-lg ring-1 ring-black/5">
+                <button
+                  type="button"
+                  className="block w-full px-4 py-2.5 text-left font-medium hover:bg-surface-container-low"
+                  onClick={() => {
+                    resetDemoData();
+                    setAccountMenuOpen(false);
+                  }}
+                >
+                  Reset demo data
+                </button>
+                <button
+                  type="button"
+                  className="block w-full px-4 py-2.5 text-left font-medium text-error hover:bg-surface-container-low"
+                  onClick={() => {
+                    setAccountMenuOpen(false);
+                    logout();
+                  }}
+                >
+                  Log out
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </header>
+
+        <header className="font-headline sticky top-0 z-30 hidden w-full items-center justify-between border-b border-outline-variant/10 bg-nav-bar px-8 py-3 text-sm font-medium dark:border-white/5 dark:bg-nav-bar-dark lg:flex">
           <div className="flex w-1/3 items-center gap-4">
             <div className="relative w-full max-w-xs">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">
@@ -267,23 +345,49 @@ export function Dashboard() {
           </div>
         </header>
 
-        <div className="mx-auto w-full max-w-7xl space-y-12 p-8 lg:p-12">
-          <section className="grid grid-cols-1 items-end gap-8 lg:grid-cols-3">
-            <div className="space-y-2 lg:col-span-2">
+        <div
+          id="dashboard-top"
+          className="mx-auto w-full max-w-7xl space-y-10 px-4 pb-6 pt-8 sm:px-6 lg:space-y-12 lg:p-8 lg:pb-12 xl:p-12"
+        >
+          <section className="space-y-6 lg:grid lg:grid-cols-3 lg:items-end lg:gap-8 lg:space-y-0">
+            <div className="space-y-1 lg:col-span-2 lg:space-y-2">
               <h2 className="text-sm font-medium uppercase tracking-wide text-on-surface-variant">
-                Month balance
+                Remaining balance
               </h2>
-              <div className="flex flex-wrap items-baseline gap-4">
-                <span className="font-headline text-[clamp(2.5rem,6vw,3.5rem)] font-extrabold leading-none text-primary">
+              <div className="flex flex-wrap items-baseline gap-2 gap-y-2 lg:gap-4">
+                <span className="font-headline text-5xl font-extrabold tracking-tight text-primary lg:text-[clamp(2.5rem,6vw,3.5rem)] lg:leading-none">
                   {formatCurrency(remainingBalance)}
                 </span>
-                <span className="flex items-center gap-1 rounded-lg bg-secondary-container px-2 py-1 text-sm font-bold text-on-secondary-container">
+                <span className="flex items-center gap-1 text-lg font-semibold text-secondary lg:rounded-lg lg:bg-secondary-container lg:px-2 lg:py-1 lg:text-sm lg:font-bold lg:text-on-secondary-container">
                   <span className="material-symbols-outlined text-base">trending_up</span>
-                  {formatCurrency(totalIncome)} in · {formatCurrency(totalExpenses)} out
+                  <span className="hidden sm:inline">
+                    {formatCurrency(totalIncome)} in · {formatCurrency(totalExpenses)} out
+                  </span>
+                  <span className="sm:hidden">Cash flow</span>
                 </span>
               </div>
             </div>
-            <div className="space-y-4 rounded-xl bg-surface-container-low p-6">
+
+            <div className="grid grid-cols-2 gap-4 lg:hidden">
+              <div className="flex h-32 flex-col justify-between rounded-xl border border-outline-variant/10 bg-surface-container-low p-5 shadow-sm">
+                <p className="text-sm font-medium text-on-surface-variant">Total month expenses</p>
+                <p className="font-headline text-3xl font-bold text-error">{formatCurrency(totalExpenses)}</p>
+              </div>
+              <div className="flex h-32 flex-col justify-between rounded-xl bg-gradient-to-br from-primary to-primary-container p-5 shadow-lg">
+                <div className="flex items-start justify-between">
+                  <p className="text-sm font-medium text-on-primary/80">Budget used</p>
+                  <p className="font-bold text-on-primary">{budgetUsedPct.toFixed(0)}%</p>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-white/20">
+                  <div
+                    className="h-full rounded-full bg-secondary-container"
+                    style={{ width: `${Math.min(100, budgetUsedPct)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="hidden space-y-4 rounded-xl bg-surface-container-low p-6 lg:block">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-on-surface-variant">Budget usage</span>
                 <span className="text-sm font-bold">{budgetUsedPct.toFixed(0)}%</span>
@@ -302,14 +406,67 @@ export function Dashboard() {
             </div>
           </section>
 
+          <section className="space-y-6 lg:hidden">
+            <div className="flex items-center justify-between">
+              <h2 className="font-headline text-2xl font-bold">Monthly spending</h2>
+              <button
+                type="button"
+                className="text-sm font-semibold text-primary hover:opacity-80"
+                onClick={() => navigateMobile("charts", "insights")}
+              >
+                View details
+              </button>
+            </div>
+            <div className="space-y-6 rounded-xl border border-outline-variant/10 bg-surface-container-lowest p-6 shadow-sm">
+              {topExpenseCategoriesMobile.length === 0 ? (
+                <p className="text-sm text-on-surface-variant">No spending this month yet.</p>
+              ) : (
+                topExpenseCategoriesMobile.map((cat, idx) => {
+                  const style = MOBILE_CATEGORY_STYLES[idx % MOBILE_CATEGORY_STYLES.length];
+                  const pct = Math.round((cat.amount / mobileCategoryBarMax) * 100);
+                  return (
+                    <div key={cat.categoryId} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`flex h-10 w-10 items-center justify-center rounded-lg ${style.box}`}
+                          >
+                            <span className={`material-symbols-outlined ${style.icon}`}>
+                              receipt_long
+                            </span>
+                          </div>
+                          <span className="font-semibold text-on-surface">{cat.name}</span>
+                        </div>
+                        <span className="text-sm text-on-surface-variant">
+                          {formatCurrency(cat.amount)}
+                        </span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-surface-container">
+                        <div
+                          className={`h-full rounded-full ${style.bar}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </section>
+
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
             <div className="space-y-8 lg:col-span-8">
-              <section id="charts" className="scroll-mt-24 space-y-8">
-                <div className="rounded-xl bg-surface-container-lowest p-6 shadow-sm md:p-8">
+              <section
+                id="charts"
+                className="scroll-mt-28 space-y-8 lg:scroll-mt-24"
+              >
+                <div className="rounded-xl bg-surface-container-lowest p-5 shadow-sm sm:p-6 md:p-8">
                   <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <div>
-                      <h3 className="font-headline text-xl font-bold">Insights</h3>
-                      <p className="text-sm text-on-surface-variant">Categories and spending trend</p>
+                      <h3 className="font-headline text-xl font-bold lg:text-xl">Insights</h3>
+                      <p className="text-sm text-on-surface-variant">
+                        Categories and spending trend
+                      </p>
                     </div>
                   </div>
                   <div className="grid gap-8 md:grid-cols-2">
@@ -329,52 +486,83 @@ export function Dashboard() {
                 </div>
               </section>
 
-              <section className="overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm">
-                <div className="flex items-center justify-between bg-surface-container-low/50 px-6 py-5 md:px-8">
-                  <h3 className="font-headline text-lg font-bold">Recent transactions</h3>
+              <section className="overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm lg:rounded-xl">
+                <div className="flex items-center justify-between bg-surface-container-low/50 px-5 py-4 sm:px-6 md:px-8 md:py-5">
+                  <h3 className="font-headline text-xl font-bold lg:text-lg">Recent transactions</h3>
                   <a
                     className="flex items-center gap-1 text-sm font-bold text-primary-container dark:text-primary-fixed"
                     href="#transactions"
+                    onClick={() => setMobileNav("history")}
                   >
                     Full history
                     <span className="material-symbols-outlined text-base">arrow_outward</span>
                   </a>
                 </div>
-                <div>
-                  {recentRows.length === 0 ? (
-                    <p className="px-8 py-10 text-sm text-on-surface-variant">No transactions yet.</p>
-                  ) : (
-                    recentRows.map((row, i) => (
-                      <div
-                        key={row.id}
-                        className={`flex cursor-default items-center justify-between px-6 py-5 transition-colors hover:bg-surface-bright md:px-8 ${i % 2 === 1 ? "bg-surface-container-low/20" : ""}`}
-                      >
-                        <div className="flex items-center gap-5">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-container text-on-surface-variant">
-                            <span className="material-symbols-outlined">{txIcon(row.kind)}</span>
+                {recentRows.length === 0 ? (
+                  <p className="px-5 py-10 text-sm text-on-surface-variant sm:px-8">
+                    No transactions yet.
+                  </p>
+                ) : (
+                  <>
+                    <div className="space-y-4 p-4 lg:hidden">
+                      {recentRows.map((row) => (
+                        <div
+                          key={row.id}
+                          className="flex cursor-default items-center justify-between rounded-xl border border-outline-variant/10 bg-surface-container-lowest p-4 shadow-sm transition-colors active:bg-surface-container"
+                        >
+                          <div className="flex min-w-0 flex-1 items-center gap-4">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface-container text-on-surface-variant">
+                              <span className="material-symbols-outlined">{txIcon(row.kind)}</span>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-on-surface">{row.title}</p>
+                              <p className="text-sm text-on-surface-variant">
+                                {row.categoryName} · {row.date}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-bold">{row.title}</p>
-                            <p className="text-xs text-on-surface-variant">
-                              {row.categoryName} · {row.date}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
                           <p
-                            className={`font-bold ${row.kind === "expense" ? "text-error" : "text-secondary"}`}
+                            className={`shrink-0 pl-2 font-bold ${row.kind === "expense" ? "text-error" : "text-secondary"}`}
                           >
                             {row.kind === "expense" ? "-" : "+"}
                             {formatCurrency(row.amount)}
                           </p>
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                            {row.kind}
-                          </p>
                         </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                      ))}
+                    </div>
+                    <div className="hidden lg:block">
+                      {recentRows.map((row, i) => (
+                        <div
+                          key={row.id}
+                          className={`flex cursor-default items-center justify-between px-6 py-5 transition-colors hover:bg-surface-bright md:px-8 ${i % 2 === 1 ? "bg-surface-container-low/20" : ""}`}
+                        >
+                          <div className="flex items-center gap-5">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-container text-on-surface-variant">
+                              <span className="material-symbols-outlined">{txIcon(row.kind)}</span>
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold">{row.title}</p>
+                              <p className="text-xs text-on-surface-variant">
+                                {row.categoryName} · {row.date}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p
+                              className={`font-bold ${row.kind === "expense" ? "text-error" : "text-secondary"}`}
+                            >
+                              {row.kind === "expense" ? "-" : "+"}
+                              {formatCurrency(row.amount)}
+                            </p>
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                              {row.kind}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </section>
             </div>
 
@@ -419,26 +607,30 @@ export function Dashboard() {
                 </div>
               </div>
 
-              <div className="relative rounded-xl border border-secondary/10 bg-secondary-container p-8">
-                <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-on-secondary">
-                  <span className="material-symbols-outlined filled">lightbulb</span>
+              <div className="relative overflow-hidden rounded-[2rem] border border-secondary/10 bg-secondary-container/30 p-8 lg:rounded-xl lg:bg-secondary-container">
+                <div className="absolute -bottom-10 -right-10 z-0 h-48 w-48 rounded-full bg-secondary-container opacity-50 blur-3xl lg:hidden" />
+                <div className="relative z-10">
+                  <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-on-secondary lg:mb-6">
+                    <span className="material-symbols-outlined filled text-2xl lg:text-base">lightbulb</span>
+                  </div>
+                  <h4 className="mb-3 font-headline text-2xl font-bold text-on-secondary-container lg:text-lg">
+                    Smart saving tip
+                  </h4>
+                  <p className="mb-6 max-w-xs text-sm leading-relaxed text-on-secondary-container/80 lg:max-w-none lg:text-on-secondary-container">
+                    Try aligning discretionary spend with what&apos;s left after your budget. Small
+                    weekly reviews beat one big reckoning at month end.
+                  </p>
+                  <a
+                    className="inline-flex items-center gap-2 rounded-full bg-secondary px-6 py-3 text-sm font-bold text-on-secondary transition-all hover:opacity-90 active:scale-95 lg:bg-transparent lg:px-0 lg:py-0 lg:text-secondary lg:active:scale-100"
+                    href="#manage"
+                    onClick={() => setMobileNav("profile")}
+                  >
+                    <span className="lg:inline">Adjust goals</span>
+                    <span className="hidden lg:inline">
+                      <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                    </span>
+                  </a>
                 </div>
-                <h4 className="mb-3 font-headline text-lg font-bold text-on-secondary-container">
-                  Smart saving tip
-                </h4>
-                <p className="mb-6 text-sm leading-relaxed text-on-secondary-container">
-                  Try aligning discretionary spend with what&apos;s left after your budget. Small weekly
-                  reviews beat one big reckoning at month end.
-                </p>
-                <a
-                  className="flex items-center gap-2 text-sm font-bold text-secondary"
-                  href="#manage"
-                >
-                  Adjust goals
-                  <span className="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">
-                    arrow_forward
-                  </span>
-                </a>
               </div>
 
               <div className="rounded-xl bg-surface-container-low p-8" id="add-transaction">
@@ -459,7 +651,7 @@ export function Dashboard() {
             </div>
           </div>
 
-          <section id="manage" className="scroll-mt-24 space-y-8">
+          <section id="manage" className="scroll-mt-28 space-y-8 lg:scroll-mt-24">
             <h2 className="font-headline text-xl font-bold">Manage</h2>
             <div className="grid gap-6 lg:grid-cols-2">
               <ManageCard title="Budget & savings">
@@ -628,57 +820,167 @@ export function Dashboard() {
               </ManageCard>
 
               <ManageCard title="All transactions" className="lg:col-span-2">
-                <div id="transactions" className="scroll-mt-24 overflow-x-auto">
-                  <table className="min-w-full text-left text-sm">
-                    <thead className="text-on-surface-variant">
-                      <tr className="border-b border-outline-variant/15">
-                        <th className="pb-3 font-semibold">Date</th>
-                        <th className="pb-3 font-semibold">Title</th>
-                        <th className="pb-3 font-semibold">Type</th>
-                        <th className="pb-3 font-semibold">Category</th>
-                        <th className="pb-3 font-semibold">Amount</th>
-                        <th className="pb-3 font-semibold">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((row) => (
-                        <tr key={row.id} className="border-b border-outline-variant/10">
-                          <td className="py-3">{row.date}</td>
-                          <td className="py-3">{row.title}</td>
-                          <td className="py-3 capitalize">{row.kind}</td>
-                          <td className="py-3">{row.categoryName}</td>
-                          <td
-                            className={`py-3 font-medium ${row.kind === "expense" ? "text-error" : "text-secondary"}`}
+                <div
+                  id="transactions"
+                  className="scroll-mt-28 space-y-4 lg:scroll-mt-24 lg:space-y-0"
+                >
+                  <div className="lg:hidden">
+                    {rows.map((row) => (
+                      <div
+                        key={row.id}
+                        className="rounded-xl border border-outline-variant/10 bg-surface-container-low/50 p-4 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-on-surface">{row.title}</p>
+                            <p className="mt-0.5 text-xs text-on-surface-variant">
+                              {row.categoryName} · {row.date} ·{" "}
+                              <span className="capitalize">{row.kind}</span>
+                            </p>
+                          </div>
+                          <p
+                            className={`shrink-0 text-sm font-bold ${row.kind === "expense" ? "text-error" : "text-secondary"}`}
                           >
                             {formatCurrency(row.amount)}
-                          </td>
-                          <td className="py-3">
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                type="button"
-                                onClick={() => editTransaction(row.id)}
-                                className="font-semibold text-primary-container hover:underline dark:text-primary-fixed"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeTransaction(row.id)}
-                                className="font-semibold text-error hover:underline"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
+                          </p>
+                        </div>
+                        <div className="mt-3 flex gap-4 border-t border-outline-variant/10 pt-3">
+                          <button
+                            type="button"
+                            onClick={() => editTransaction(row.id)}
+                            className="text-sm font-semibold text-primary-container dark:text-primary-fixed"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeTransaction(row.id)}
+                            className="text-sm font-semibold text-error"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="hidden overflow-x-auto lg:block">
+                    <table className="min-w-full text-left text-sm">
+                      <thead className="text-on-surface-variant">
+                        <tr className="border-b border-outline-variant/15">
+                          <th className="pb-3 font-semibold">Date</th>
+                          <th className="pb-3 font-semibold">Title</th>
+                          <th className="pb-3 font-semibold">Type</th>
+                          <th className="pb-3 font-semibold">Category</th>
+                          <th className="pb-3 font-semibold">Amount</th>
+                          <th className="pb-3 font-semibold">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {rows.map((row) => (
+                          <tr key={row.id} className="border-b border-outline-variant/10">
+                            <td className="py-3">{row.date}</td>
+                            <td className="py-3">{row.title}</td>
+                            <td className="py-3 capitalize">{row.kind}</td>
+                            <td className="py-3">{row.categoryName}</td>
+                            <td
+                              className={`py-3 font-medium ${row.kind === "expense" ? "text-error" : "text-secondary"}`}
+                            >
+                              {formatCurrency(row.amount)}
+                            </td>
+                            <td className="py-3">
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => editTransaction(row.id)}
+                                  className="font-semibold text-primary-container hover:underline dark:text-primary-fixed"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeTransaction(row.id)}
+                                  className="font-semibold text-error hover:underline"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </ManageCard>
             </div>
           </section>
         </div>
+
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-50 flex items-end justify-around rounded-t-[2rem] border-t border-outline-variant/20 bg-nav-dock px-2 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 shadow-[0px_-12px_32px_rgba(25,28,29,0.04)] lg:hidden dark:border-white/5 dark:bg-nav-dock-dark"
+          aria-label="Main navigation"
+        >
+          <button
+            type="button"
+            onClick={() => navigateMobile("dashboard-top", "home")}
+            className={`flex flex-col items-center justify-center rounded-full px-3 py-1 text-[11px] font-medium transition-all active:scale-90 ${
+              mobileNav === "home"
+                ? "bg-primary-fixed text-primary"
+                : "text-on-surface-variant opacity-70"
+            }`}
+          >
+            <span
+              className={`material-symbols-outlined ${mobileNav === "home" ? "filled" : ""} text-[24px]`}
+            >
+              home
+            </span>
+            Home
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateMobile("transactions", "history")}
+            className={`flex flex-col items-center justify-center rounded-full px-3 py-1 text-[11px] font-medium transition-all active:scale-90 ${
+              mobileNav === "history"
+                ? "bg-primary-fixed text-primary"
+                : "text-on-surface-variant opacity-70"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[24px]">history</span>
+            History
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateMobile("transaction-form", "add")}
+            className="-mt-8 flex flex-col items-center rounded-full bg-nav-dock p-2 shadow-lg transition-all active:scale-90 dark:bg-nav-dock-dark"
+            aria-label="Add transaction"
+          >
+            <span className="material-symbols-outlined filled text-5xl text-primary">add_circle</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateMobile("charts", "insights")}
+            className={`flex flex-col items-center justify-center rounded-full px-3 py-1 text-[11px] font-medium transition-all active:scale-90 ${
+              mobileNav === "insights"
+                ? "bg-primary-fixed text-primary"
+                : "text-on-surface-variant opacity-70"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[24px]">bar_chart</span>
+            Insights
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateMobile("manage", "profile")}
+            className={`flex flex-col items-center justify-center rounded-full px-3 py-1 text-[11px] font-medium transition-all active:scale-90 ${
+              mobileNav === "profile"
+                ? "bg-primary-fixed text-primary"
+                : "text-on-surface-variant opacity-70"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[24px]">person</span>
+            Profile
+          </button>
+        </nav>
       </main>
     </div>
   );
