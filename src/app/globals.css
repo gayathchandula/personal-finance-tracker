@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Manual dark mode: add class `dark` on <html>. Tailwind `dark:*` follows it. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #faf9fc;
   --foreground: #1b1c1e;
@@ -52,11 +55,10 @@
   --font-headline: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #121316;
-    --foreground: #f2f0f3;
-  }
+/* Dark theme when <html class="dark"> (set by inline script + theme toggle). */
+html.dark {
+  --background: #121316;
+  --foreground: #f2f0f3;
 }
 
 body {

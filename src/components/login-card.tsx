@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { demoCredentials, useFinanceStore } from "@/store/finance-store";
 
 export function LoginCard() {
@@ -15,7 +16,10 @@ export function LoginCard() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] min-h-screen flex-col items-center justify-center bg-background px-4 py-12 pb-[max(3rem,env(safe-area-inset-bottom))] pt-8 sm:py-16">
+    <div className="relative flex min-h-[100dvh] min-h-screen flex-col items-center justify-center bg-background px-4 py-12 pb-[max(3rem,env(safe-area-inset-bottom))] pt-8 sm:py-16">
+      <div className="absolute right-4 top-4 sm:right-8 sm:top-6">
+        <ThemeToggle className="rounded-full p-2 text-on-surface transition-colors hover:bg-surface-container-low dark:hover:bg-white/10" />
+      </div>
       <div className="mb-10 flex items-center gap-3 text-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-container text-on-primary">
           <span className="material-symbols-outlined filled text-[28px]">account_balance_wallet</span>

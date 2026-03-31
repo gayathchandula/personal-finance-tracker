@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { CategoryPieChart, MonthlyTrendChart } from "@/components/charts";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { formatCurrency, getMonthKey } from "@/lib/date";
 import { useFinanceStore } from "@/store/finance-store";
 import type { FinanceGoals, TransactionKind } from "@/types/finance";
@@ -277,6 +278,7 @@ export function Dashboard() {
             <h1 className="font-headline text-xl font-extrabold text-primary">Prosper Ledger</h1>
           </div>
           <div className="relative flex items-center gap-1">
+            <ThemeToggle className="rounded-full p-2 text-primary transition-opacity hover:opacity-80" />
             <button
               type="button"
               className="rounded-full p-2 text-primary transition-opacity hover:opacity-80"
@@ -335,9 +337,10 @@ export function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle className="rounded-full p-2 text-slate-500 transition-colors hover:bg-surface-container-low dark:text-slate-300 dark:hover:bg-white/10" />
             <button
               type="button"
-              className="rounded-full p-2 text-slate-500 transition-colors hover:bg-surface-container-low"
+              className="rounded-full p-2 text-slate-500 transition-colors hover:bg-surface-container-low dark:text-slate-300 dark:hover:bg-white/10"
               aria-label="Notifications"
             >
               <span className="material-symbols-outlined text-[22px]">notifications</span>
