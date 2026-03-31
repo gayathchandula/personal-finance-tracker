@@ -9,12 +9,16 @@ export default function Home() {
   const hydrated = useFinanceStore((s) => s.hydrated);
 
   if (!hydrated) {
-    return <div className="p-6 text-center text-sm text-slate-500">Loading finance dashboard...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6 text-center text-sm text-on-surface-variant">
+        Loading finance dashboard…
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <main>{user ? <Dashboard /> : <LoginCard />}</main>
+    <div className="min-h-screen bg-background text-on-background">
+      <main className="min-h-screen">{user ? <Dashboard /> : <LoginCard />}</main>
     </div>
   );
 }

@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf9fc;
+  --foreground: #1b1c1e;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: #faf9fc;
+  --color-on-background: #1b1c1e;
+  --color-surface: #faf9fc;
+  --color-surface-bright: #faf9fc;
+  --color-surface-dim: #dbd9dd;
+  --color-surface-variant: #e3e2e5;
+  --color-surface-container: #efedf0;
+  --color-surface-container-low: #f4f3f6;
+  --color-surface-container-high: #e9e7eb;
+  --color-surface-container-highest: #e3e2e5;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-surface: #1b1c1e;
+  --color-on-surface-variant: #44474e;
+  --color-primary: #000209;
+  --color-primary-container: #001d3d;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #6186bc;
+  --color-primary-fixed: #d4e3ff;
+  --color-primary-fixed-dim: #a5c8ff;
+  --color-on-primary-fixed: #001c3a;
+  --color-secondary: #2c694e;
+  --color-secondary-container: #aeeecb;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #316e52;
+  --color-secondary-fixed: #b1f0ce;
+  --color-tertiary: #0a0000;
+  --color-tertiary-container: #410400;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-fixed: #ffdad3;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-outline: #74777f;
+  --color-outline-variant: #c4c6cf;
+  --color-surface-tint: #396093;
+  --color-inverse-surface: #2f3033;
+  --color-inverse-on-surface: #f2f0f3;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-headline: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #121316;
+    --foreground: #f2f0f3;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+.font-headline {
+  font-family: var(--font-manrope), system-ui, sans-serif;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+}
+
+.material-symbols-outlined.filled {
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
 }

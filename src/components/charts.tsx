@@ -14,7 +14,7 @@ import {
 import { formatCurrency, getMonthKey } from "@/lib/date";
 import type { Category, Transaction } from "@/types/finance";
 
-const COLORS = ["#2563eb", "#16a34a", "#f97316", "#db2777", "#7c3aed", "#0f766e"];
+const COLORS = ["#396093", "#2c694e", "#d66853", "#1e4879", "#6186bc", "#316e52"];
 
 export function CategoryPieChart({
   categories,
@@ -41,7 +41,7 @@ export function CategoryPieChart({
               <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip formatter={(value: number) => formatCurrency(Number(value))} />
+          <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0))} />
         </PieChart>
       </ResponsiveContainer>
     </div>
@@ -66,8 +66,8 @@ export function MonthlyTrendChart({ transactions }: { transactions: Transaction[
         <LineChart data={points}>
           <XAxis dataKey="month" />
           <YAxis />
-          <Tooltip formatter={(value: number) => formatCurrency(Number(value))} />
-          <Line type="monotone" dataKey="expense" stroke="#2563eb" strokeWidth={3} />
+          <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0))} />
+          <Line type="monotone" dataKey="expense" stroke="#2c694e" strokeWidth={3} dot={{ fill: "#2c694e" }} />
         </LineChart>
       </ResponsiveContainer>
     </div>
